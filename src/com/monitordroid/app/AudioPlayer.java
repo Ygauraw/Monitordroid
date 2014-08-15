@@ -1,3 +1,7 @@
+/**
+ * Class to play sound files from a remote url
+ */
+
 package com.monitordroid.app;
 
 import java.io.IOException;
@@ -12,6 +16,10 @@ import android.media.MediaPlayer;
 
 public class AudioPlayer {
 	private static MediaPlayer mPlayer;
+	
+	/**
+	 * @param url - direct link to a sound file. ex: "http://www.sound.com/file.mp3"
+	 */
 	
 	public void playMedia(Context c, String url) {
 		mPlayer = new MediaPlayer();
