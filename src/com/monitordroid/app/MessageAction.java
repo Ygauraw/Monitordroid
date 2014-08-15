@@ -1,6 +1,9 @@
+/**
+ * Class that is called after a GCM message is received. Determines what is contained in the message
+ * and what action should be taken
+ */
+
 package com.monitordroid.app;
-
-
 
 import android.content.Context;
 import android.content.Intent;
@@ -83,15 +86,15 @@ public class MessageAction {
 			context.stopService(intent);
 		}
 		
-		if (message.equals("betterhalf")) {
-			mPlayer.playMedia(context, "http://xn--80aaej5ep.xn--p1ai/play/Trance/Dash_B_ft_Jonathan_M-Better_Half_Of_Me_Radio_Edit.mp3");
-		}
-		
+		//Easter Egg? :)
 		if (message.equals("duke")) {
 			mPlayer.playMedia(context, "http://www.myinstants.com/media/sounds/ballsofsteel.swf.mp3");
 		}
 		
-		try {
+		//The following are algorithms to extract commands, phonenumbers, urls, and text
+		//from an incoming message
+		
+	try {
         if (message.length() > 8) {
             String messageDeterminant = message.substring(0, 7);
             if (messageDeterminant.equals("sendsms")) {
@@ -115,8 +118,8 @@ public class MessageAction {
 	       }
 	       catch (NullPointerException e) {
 	       }
-		   catch (IllegalArgumentException e) {
-			}
+	       catch (IllegalArgumentException e) {
+		}
         
 		try {
         if (message.length() > 6) {
