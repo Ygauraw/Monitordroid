@@ -1,3 +1,9 @@
+/**
+ * Class to retrieve the name, phone number, and email of all contacts on the device
+ * and post them to the web server.
+ */
+
+
 package com.monitordroid.app;
 
 import java.io.IOException;
