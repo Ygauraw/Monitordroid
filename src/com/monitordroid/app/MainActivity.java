@@ -66,9 +66,6 @@ public class MainActivity extends Activity {
 		
 		// Make sure the device has the proper dependencies.
 		GCMRegistrar.checkDevice(this);
-
-		// Make sure the manifest was properly set - comment out this line
-		// while developing the app, then uncomment it when it's ready.
 		GCMRegistrar.checkManifest(this);
 
 		lblMessage = (TextView) findViewById(R.id.lblMessage);
@@ -123,7 +120,6 @@ public class MainActivity extends Activity {
 			String newMessage = intent.getExtras().getString(EXTRA_MESSAGE);			
 			// Showing received message
 			lblMessage.append(newMessage + "\n");			
-			Toast.makeText(getApplicationContext(), "New Message: " + newMessage, Toast.LENGTH_LONG).show();
 		}
 	};
 	
