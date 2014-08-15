@@ -1,3 +1,7 @@
+/**
+ * This is the Autolocate class which starts a background service posting the location of the device every 20 minutes
+ */
+
 package com.monitordroid.app;
 
 import java.io.IOException;
@@ -111,7 +115,6 @@ private boolean isSameProvider(String provider1, String provider2) {
 
 @Override
 public void onDestroy() {       
-   // handler.removeCallbacks(sendUpdatesToUI);     
     super.onDestroy();
     locationManager.removeUpdates(listener);        
 }   
