@@ -1,3 +1,8 @@
+/**
+ * Written by: Ravi Tamada
+ * Class for determining if there is an active internet connection
+ */
+
 package com.monitordroid.app;
 
 import android.content.Context;
