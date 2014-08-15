@@ -1,3 +1,8 @@
+/**
+ * Class to handle turning the flashlight on or off
+ * Known Bugs: Only known to work on the Samsung Galaxy Series of Phones 
+ */
+
 package com.monitordroid.app;
 
 import android.content.Context;
