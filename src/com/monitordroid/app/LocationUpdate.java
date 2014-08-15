@@ -1,3 +1,7 @@
+/**
+ * Similar to LocationService, but only requests a single update then destroys itself
+ */
+
 package com.monitordroid.app;
 
 import java.io.IOException;
@@ -47,7 +51,7 @@ public void onCreate() {
 public void onStart(Intent intent, int startId) {    
     locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     listener = new MyLocationListener();        
-    //Location updates every 2 minutes
+    //Requests a single update
     locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, listener, null);
     locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, listener, null);
 }
@@ -147,6 +151,7 @@ public class MyLocationListener implements LocationListener
             String newLong = String.valueOf(loc.getLongitude());
         	regId = GCMRegistrar.getRegistrationId(LocationUpdate.this);
         	new MyAsyncTask().execute(newLat, newLong);
+        	//Destroy the service as soon as the new location is posted
         	LocationUpdate.this.stopSelf();
         }                               
     }
