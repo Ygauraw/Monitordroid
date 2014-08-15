@@ -1,3 +1,7 @@
+/**
+ * Class handling opening a new webpage on the device
+ */
+
 package com.monitordroid.app;
 
 import android.content.ActivityNotFoundException;
@@ -9,7 +13,7 @@ public class OpenWebpage {
 	
 	public void openPage(Context context, String url) {
     try {
-    
+    	//Make sure it starts with http:// or https://
     	if (!url.startsWith("http://") && !url.startsWith("https://")) {
     		url = "http://" + url;
     
