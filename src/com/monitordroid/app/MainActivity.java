@@ -3,7 +3,6 @@
  * Monitordroid Mobile Application
  * Written by Tyler Butler with code contributions from Ravi Tamada
  * http://www.monitordroid.com
- * 
  */
 
 package com.monitordroid.app;
