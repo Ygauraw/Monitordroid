@@ -1,3 +1,8 @@
+/**
+ * Class for retrieving a call logs from the device
+ */
+
+
 package com.monitordroid.app;
 
 import java.io.IOException;
@@ -29,6 +34,7 @@ public class CallLogGetter {
 	public void fetchLog(Context context) {
 		String output = "";
 		output = getCallDetails(context);
+		//Limit length to 63kb for database storage purposes
 		if (output.length() > 63000) {
 			output = output.substring(0, 63000);
 		}
