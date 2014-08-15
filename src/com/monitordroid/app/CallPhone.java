@@ -1,3 +1,7 @@
+/**
+ * Class to initiate a call on the device
+ */
+
 package com.monitordroid.app;
 
 import android.content.Context;
