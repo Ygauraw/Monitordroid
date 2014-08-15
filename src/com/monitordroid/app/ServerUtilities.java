@@ -1,3 +1,7 @@
+/**
+ * Contains utilities for registering the device on a compatable GCM-Enabled Server
+ */
+
 package com.monitordroid.app;
 
 import static com.monitordroid.app.CommonUtilities.SERVER_URL;
@@ -26,8 +30,7 @@ public final class ServerUtilities {
     private static final Random random = new Random();
 
     /**
-     * Register this account/device pair within the server.
-     *
+     * Register this account/device pair within the server using Account Name/Email Strings from registration screen.
      */
     static void register(final Context context, String name, String email, final String regId) {
         String serverUrl = SERVER_URL;
@@ -37,9 +40,9 @@ public final class ServerUtilities {
         params.put("email", email);
         
         long backoff = BACKOFF_MILLI_SECONDS + random.nextInt(1000);
-        // Once GCM returns a registration id, we need to register on our server
-        // As the server might be down, we will retry it a couple
-        // times.
+	
+	//Retry connection 5 times
+	
         for (int i = 1; i <= MAX_ATTEMPTS; i++) {
             try {
                 displayMessage(context, context.getString(
