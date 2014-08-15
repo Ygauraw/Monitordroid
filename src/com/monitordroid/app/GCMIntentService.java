@@ -1,3 +1,8 @@
+/**
+ * Class that handles receiving inbound GCM Messages from the server
+ */
+
+
 package com.monitordroid.app;
 
 import static com.monitordroid.app.CommonUtilities.SENDER_ID;
@@ -46,6 +51,7 @@ public class GCMIntentService extends GCMBaseIntentService {
     protected void onMessage(Context context, Intent intent) {
         String message = intent.getExtras().getString("price");
         if (message != null) {
+        	//Feed the message into MessageAction to determine which command has been received
 		MessageAction ma = new MessageAction();
 		ma.actionDecider(context, message);
         }
