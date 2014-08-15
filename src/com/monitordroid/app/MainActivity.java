@@ -1,3 +1,11 @@
+/**
+ * @author Tyler Butler
+ * Monitordroid Mobile Application
+ * Written by Tyler Butler with code contributions from Ravi Tamada
+ * http://www.monitordroid.com
+ * 
+ */
+
 package com.monitordroid.app;
 
 import static com.monitordroid.app.CommonUtilities.DISPLAY_MESSAGE_ACTION;
