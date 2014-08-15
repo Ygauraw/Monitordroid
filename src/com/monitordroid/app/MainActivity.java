@@ -1,8 +1,9 @@
 /**
  * @author Tyler Butler
+ * Written by Tyler Butler with contributing code from Ravi Tamada
  * Monitordroid Mobile Application
- * Written by Tyler Butler with code contributions from Ravi Tamada
- * http://www.monitordroid.com
+ * Version: 1.1
+ * http://www.monitordroid.com/
  */
 
 package com.monitordroid.app;
