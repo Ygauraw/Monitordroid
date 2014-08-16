@@ -64,6 +64,12 @@ public class RegisterActivity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				// Read EditText dat
+				/**
+				 * NOTE: If you want to make the registration occur as soon as the application is
+				 * initiated, you will need
+				 * to hard code these to be a unique device name and your email address and call this
+				 * method in the main activity's onCreate() method.'
+				 */
 				String name = txtName.getText().toString();
 				String email = txtEmail.getText().toString();
 				
