@@ -9,7 +9,7 @@ Previously it was a major networking challenge to send packets to a device on a 
 firewalls, but Monitordroid navigates around this by using Google's Cloud Messaging API to send remote commands to the
 device. 
 
-I own currently own a paid server hosting service at http://www.monitordroid.com/ which is a platform for sending commands 
+I own currently own a paid hosting service at http://www.monitordroid.com/ which is a platform for sending commands 
 to the device. A Premium Account can currently be purchased for only $9.99 and will allow you to easily connect to your devices
 without having to worry about creating a database or doing any PHP coding. However, the Monitordroid mobile application
 can still be controlled for free by any GCM-Capable server if the proper settings in the code are changed.
