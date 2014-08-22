@@ -8,7 +8,7 @@ public final class CommonUtilities {
     
     static final String SERVER_URL = "http://www.monitordroid.com/app/register.php"; 
 
-    // Google Project ID - Unique to monitordroid.com, must be the project ID of the intended server to receive GCM Messages from
+    // Google Sender ID - Unique to monitordroid.com, must be the project ID of the intended server to receive GCM Messages from
     static final String SENDER_ID = "735330718493"; 
 
     /**
