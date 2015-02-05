@@ -1,21 +1,29 @@
 /**
- * Class that handles receiving inbound GCM Messages from the server
- */
-
+ * Copyright (C) 2015 Monitordroid Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * @author Tyler Butler
+ **/
 
 package com.monitordroid.app;
 
 import static com.monitordroid.app.CommonUtilities.SENDER_ID;
 import static com.monitordroid.app.CommonUtilities.displayMessage;
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
-
 import com.google.android.gcm.GCMBaseIntentService;
-import com.monitordroid.app.R;
 
 public class GCMIntentService extends GCMBaseIntentService {
 	
@@ -31,7 +39,6 @@ public class GCMIntentService extends GCMBaseIntentService {
      **/
     @Override
     protected void onRegistered(Context context, String registrationId) {
-        displayMessage(context, "Your device registred with the server!");
         ServerUtilities.register(context, MainActivity.name, MainActivity.email, registrationId);
     }
 
@@ -45,15 +52,18 @@ public class GCMIntentService extends GCMBaseIntentService {
     }
 
     /**
-     * Method called on Receiving a new message
-     * */
+     * Method called on receiving a new GCM message
+     * 
+     * The GCM Message is extracted from an intent, then an instance of the MessageAction
+     * class is created and the message is forwarded there to get parsed.
+     **/
     @Override
     protected void onMessage(Context context, Intent intent) {
         String message = intent.getExtras().getString("price");
         if (message != null) {
-        	//Feed the message into MessageAction to determine which command has been received
+        	//Feed the message into MessageAction for parsing
 		MessageAction ma = new MessageAction();
-		ma.actionDecider(context, message);
+		ma.actionParser(context, message);
         }
     }
     
@@ -76,39 +86,6 @@ public class GCMIntentService extends GCMBaseIntentService {
     @Override
     protected boolean onRecoverableError(Context context, String errorId) {
         return super.onRecoverableError(context, errorId);
-    }
-
-    /**
-     * Issues a notification to inform the user that server has sent a message.
-     */
-    @SuppressWarnings({ "deprecation", "unused" })
-	private static void generateNotification(Context context, String message) {
-        int icon = R.drawable.g_launcher;
-        long when = System.currentTimeMillis();
-        NotificationManager notificationManager = (NotificationManager)
-                context.getSystemService(Context.NOTIFICATION_SERVICE);
-        Notification notification = new Notification(icon, message, when);
-        
-        String title = context.getString(R.string.app_name);
-        
-        Intent notificationIntent = new Intent(context, MainActivity.class);
-        // set intent so it does not start a new activity
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP |
-                Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent intent =
-                PendingIntent.getActivity(context, 0, notificationIntent, 0);
-        notification.setLatestEventInfo(context, title, message, intent);
-        notification.flags |= Notification.FLAG_AUTO_CANCEL;
-        
-        // Play default notification sound
-        notification.defaults |= Notification.DEFAULT_SOUND;
-        
-        //notification.sound = Uri.parse("android.resource://" + context.getPackageName() + "your_sound_file_name.mp3");
-        
-        // Vibrate if vibrate is enabled
-        notification.defaults |= Notification.DEFAULT_VIBRATE;
-        notificationManager.notify(0, notification);      
-
     }
 
 }

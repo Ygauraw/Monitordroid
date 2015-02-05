@@ -2,16 +2,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >    
+    android:orientation="vertical"
+    tools:context=".RegisterActivity" >
      
      <TextView android:layout_width="fill_parent"
          android:layout_height="wrap_content"
-         android:text="Unique device name:"
+         android:text="@string/device_name_field"
          android:layout_marginLeft="10dip"
          android:layout_marginRight="10dip"
          android:layout_marginTop="20dip"/>
      
      <EditText android:id="@+id/txtName" 
+         android:inputType="text"
          android:layout_width="fill_parent"
          android:layout_height="wrap_content"
          android:layout_margin="10dip"
@@ -19,11 +21,12 @@
      
      <TextView android:layout_width="fill_parent"
          android:layout_height="wrap_content"
-         android:text="Account Email:"
+         android:text="@string/account_email_field"
          android:layout_marginLeft="10dip"
          android:layout_marginRight="10dip"/>
      
      <EditText android:id="@+id/txtEmail" 
+         android:inputType="textEmailAddress"
          android:layout_width="fill_parent"
          android:layout_height="wrap_content"
          android:layout_margin="10dip"
@@ -32,7 +35,7 @@
      <Button android:id="@+id/btnRegister"
          android:layout_width="fill_parent"
          android:layout_height="wrap_content"
-         android:text="Register"
+         android:text="@string/register_button"
          android:layout_margin="10dip"/>
 
 </LinearLayout>

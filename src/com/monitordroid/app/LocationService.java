@@ -1,14 +1,31 @@
 /**
- * This is the Autolocate class which starts a background service posting the location of the device every 20 minutes
- */
+ * Copyright (C) 2015 Monitordroid Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * @author Tyler Butler
+ **/
 
 package com.monitordroid.app;
 
+import static com.monitordroid.app.CommonUtilities.LOCATION_URL;
+
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -18,159 +35,199 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
-
+import android.util.Log;
 
 import com.google.android.gcm.GCMRegistrar;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
+import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 
 
+public class LocationService extends Service implements
+GooglePlayServicesClient.ConnectionCallbacks,
+GooglePlayServicesClient.OnConnectionFailedListener,
+LocationListener {
 
-public class LocationService extends Service {
-public static final String BROADCAST_ACTION = "Location Service";
-private static final int TWO_MINUTES = 1000 * 60 * 2;
-public LocationManager locationManager;
-public MyLocationListener listener;
-public Location previousBestLocation = null;
+private static final String TAG = "LocationService";
 
 String regId = "";
-Intent intent;
-int counter = 0;
+String mTime = "";
+String mAccuracy = "";
+int minutesTillRefresh;
+
+
+private boolean currentlyProcessingLocation = false;
+private LocationRequest locationRequest;
+private LocationClient locationClient;
 
 @Override
 public void onCreate() {
-    super.onCreate();
-    intent = new Intent(BROADCAST_ACTION);      
+super.onCreate();
+Log.i("GetLoc", "onCreate");
 }
 
+
+/**
+ * When the service is initially started, extract the desired minutes between location refreshes from the intent
+ */
 @Override
-public void onStart(Intent intent, int startId) {    
-    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    listener = new MyLocationListener();        
-    //Location updates every 20 minutes
-    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000*60*20, 0, listener);
-    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000*60*20, 0, listener);
+public int onStartCommand(Intent intent, int flags, int startId) {
+Log.i("GetLoc", "onStartCommand");
+minutesTillRefresh = (Integer)intent.getExtras().get("minutesTillRefresh"); 
+Log.i("Minutes till refresh: ", Integer.toString(minutesTillRefresh));
+if (!currentlyProcessingLocation) {
+    currentlyProcessingLocation = true;
+    startTracking();
+}
+
+return START_NOT_STICKY;
+}
+
+/**
+ * Connect to Google Play Services
+ */
+private void startTracking() {
+Log.d(TAG, "startTracking");
+
+if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(this) == ConnectionResult.SUCCESS) {
+    locationClient = new LocationClient(this,this,this);
+
+    if (!locationClient.isConnected() || !locationClient.isConnecting()) {
+        locationClient.connect();
+    }
+} else {
+    Log.e(TAG, "unable to connect to google play services.");
+}
+}
+
+/**
+ * Stop location updates and kill the service
+ */
+@Override
+public void onDestroy() {
+	Log.i("GL:", "Hit on destroy");
+	stopLocationUpdates();
+	super.onDestroy();	
 }
 
 @Override
 public IBinder onBind(Intent intent) {
-    return null;
+return null;
 }
 
-protected boolean isBetterLocation(Location location, Location currentBestLocation) {
-    if (currentBestLocation == null) {
-        // A new location is always better than no location
-        return true;
-    }
-
-    // Check whether the new location fix is newer or older
-    long timeDelta = location.getTime() - currentBestLocation.getTime();
-    boolean isSignificantlyNewer = timeDelta > TWO_MINUTES;
-    boolean isSignificantlyOlder = timeDelta < -TWO_MINUTES;
-    boolean isNewer = timeDelta > 0;
-
-    // If it's been more than two minutes since the current location, use the new location
-    // because the user has likely moved
-    if (isSignificantlyNewer) {
-        return true;
-    // If the new location is more than two minutes older, it must be worse
-    } else if (isSignificantlyOlder) {
-        return false;
-    }
-
-    // Check whether the new location fix is more or less accurate
-    int accuracyDelta = (int) (location.getAccuracy() - currentBestLocation.getAccuracy());
-    boolean isLessAccurate = accuracyDelta > 0;
-    boolean isMoreAccurate = accuracyDelta < 0;
-    boolean isSignificantlyLessAccurate = accuracyDelta > 200;
-
-    // Check if the old and new location are from the same provider
-    boolean isFromSameProvider = isSameProvider(location.getProvider(),
-            currentBestLocation.getProvider());
-
-    // Determine location quality using a combination of timeliness and accuracy
-    if (isMoreAccurate) {
-        return true;
-    } else if (isNewer && !isLessAccurate) {
-        return true;
-    } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
-        return true;
-    }
-    return false;
-}
-
-/** Checks whether two providers are the same */
-private boolean isSameProvider(String provider1, String provider2) {
-    if (provider1 == null) {
-      return provider2 == null;
-    }
-    return provider1.equals(provider2);
-}
-
+/**
+ * Called when a new location has been acquired
+ * 
+ * Extracts the latitude, longitude, time, and accuracy from the location object then
+ * executes an Asynctask to post them to the web server.
+ */
 @Override
-public void onDestroy() {       
-    super.onDestroy();
-    locationManager.removeUpdates(listener);        
-}   
-
-public static Thread performOnBackgroundThread(final Runnable runnable) {
-    final Thread t = new Thread() {
-        @Override
-        public void run() {
-            try {
-                runnable.run();
-            } finally {
-
-            }
-        }
-    };
-    t.start();
-    return t;
+public void onLocationChanged(Location loc) {
+if (loc != null) {
+    Log.e(TAG, "position: " + loc.getLatitude() + ", " + loc.getLongitude() + " accuracy: " + loc.getAccuracy());
+    loc.getLatitude();
+    loc.getLongitude();
+    loc.getTime();
+    //Returns accuracy of location lock in meters
+    loc.getAccuracy(); 
+    String newLat = String.valueOf(loc.getLatitude());
+    String newLong = String.valueOf(loc.getLongitude());
+    String time = String.valueOf(loc.getTime());
+    String formattedDate = millisToDate(Long.parseLong(time));
+    String accuracy = String.valueOf(loc.getAccuracy());
+    Log.i("Location date: ", formattedDate);
+    Log.i("Location accuracy: ", accuracy);
+    mTime = formattedDate;
+    mAccuracy = accuracy;
+	regId = GCMRegistrar.getRegistrationId(LocationService.this);
+	Log.i(newLat, newLong);
+	new MyAsyncTask().execute(newLat, newLong);
+	if (minutesTillRefresh == 0) {
+	stopSelf();
+	}
+}
 }
 
+/**
+ * Takes in a measured amount of milliseconds since January 1st, 1970 and converts
+ * it into a calendar date and time
+ * 
+ * @param currentTime: in milliseconds since January 1st, 1970
+ * @return: The formatted calendar date of that time
+ */
+private String millisToDate(long currentTime) {
+    String finalDate;
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTimeInMillis(currentTime);
+    Date date = calendar.getTime();
+    finalDate = date.toString();
+    return finalDate;
+}
 
-public class MyLocationListener implements LocationListener
-{
+/**
+ * Stop requesting location updates and disconnect from Google Play Services
+ */
+private void stopLocationUpdates() {
+Log.i("GL:", "Hit stopLocUpdates");
+if (locationClient != null && locationClient.isConnected()) {
+	Log.i("GL: ", "hit stopLocationUpdates if");
+    locationClient.removeLocationUpdates(this);
+    locationClient.disconnect();
+}
+}
 
+/**
+* Called by Location Services when the request to connect the
+* client finishes successfully. At this point, you can
+* request the current location or start periodic updates
+*/
+@Override
+public void onConnected(Bundle bundle) {
+Log.d(TAG, "onConnected");
 
-	public void onLocationChanged(final Location loc)
-    {
-        if(isBetterLocation(loc, previousBestLocation)) {
-            loc.getLatitude();
-            loc.getLongitude();             
-            intent.putExtra("Latitude", loc.getLatitude());
-            intent.putExtra("Longitude", loc.getLongitude());     
-            intent.putExtra("Provider", loc.getProvider());                 
-            sendBroadcast(intent);          
-            String newLat = String.valueOf(loc.getLatitude());
-            String newLong = String.valueOf(loc.getLongitude());
-        	regId = GCMRegistrar.getRegistrationId(LocationService.this);
-        	new MyAsyncTask().execute(newLat, newLong);
+locationRequest = LocationRequest.create();
+if (minutesTillRefresh != 0) {
+locationRequest.setInterval(1000*60*minutesTillRefresh); // milliseconds, use user input for how many minutes they want to wait between location refreshes
+locationRequest.setFastestInterval(1000*60*minutesTillRefresh); // the fastest rate in milliseconds at which your app can handle location updates
+}
+else {
+	locationRequest.setInterval(1);   //Single update, set interval to 1ms
+	locationRequest.setFastestInterval(1);
+}
+locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+locationClient.requestLocationUpdates(locationRequest, this);
+}
 
-        }                               
-    }
+/**
+* Called by Location Services if the connection to the
+* location client drops because of an error.
+*/
+@Override
+public void onDisconnected() {
+Log.e(TAG, "onDisconnected");
 
-    public void onProviderDisabled(String provider)
-    {
-    }
+stopLocationUpdates();
+stopSelf();
+}
 
+/**
+ * Called when connection to Google Play Services failed
+ * Stops the requesting of location updates and kill the service
+ */
+@Override
+public void onConnectionFailed(ConnectionResult connectionResult) {
+Log.e(TAG, "onConnectionFailed");
 
-    public void onProviderEnabled(String provider)
-    {
-    }
-
-
-    public void onStatusChanged(String provider, int status, Bundle extras)
-    {
-
-    }
-
+stopLocationUpdates();
+stopSelf();
 }
 
 private class MyAsyncTask extends AsyncTask<String, String, Double>{
@@ -182,25 +239,25 @@ private class MyAsyncTask extends AsyncTask<String, String, Double>{
 	}
 	 
 	protected void onPostExecute(Double result){
-
 	}
 
 
-	@SuppressWarnings("unused")
 	public void postData(String value1, String value2) {
-	// Create a new HttpClient and Post Header
 	HttpClient httpclient = new DefaultHttpClient();
-	HttpPost httppost = new HttpPost("http://www.monitordroid.com/app/postlocation.php");
+	String url = LOCATION_URL;
+	HttpPost httppost = new HttpPost(url);
 	 
 	try {
 	List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
 	nameValuePairs.add(new BasicNameValuePair("Latitude", value1));
 	nameValuePairs.add(new BasicNameValuePair("Longitude", value2));
+	nameValuePairs.add(new BasicNameValuePair("Time", mTime));
+	nameValuePairs.add(new BasicNameValuePair("Accuracy", mAccuracy));	
 	nameValuePairs.add(new BasicNameValuePair("regName", regId));
 	httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 	 
 	// Execute HTTP Post Request
-	HttpResponse response = httpclient.execute(httppost);
+	httpclient.execute(httppost);
 	 
 	} catch (ClientProtocolException e) {
 	} catch (IOException e) {

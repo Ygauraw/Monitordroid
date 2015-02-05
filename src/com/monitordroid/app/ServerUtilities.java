@@ -1,13 +1,29 @@
 /**
- * Contains utilities for registering the device on a compatable GCM-Enabled Server
- */
+ * Copyright (C) 2015 Monitordroid Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * @author Tyler Butler
+ **/
 
 package com.monitordroid.app;
 
 import static com.monitordroid.app.CommonUtilities.SERVER_URL;
 import static com.monitordroid.app.CommonUtilities.displayMessage;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -19,9 +35,9 @@ import java.util.Map.Entry;
 import java.util.Random;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.android.gcm.GCMRegistrar;
-import com.monitordroid.app.R;
 
 
 public final class ServerUtilities {
@@ -38,6 +54,7 @@ public final class ServerUtilities {
         params.put("regId", regId);
         params.put("name", name);
         params.put("email", email);
+        boolean deviceAdded;
         
         long backoff = BACKOFF_MILLI_SECONDS + random.nextInt(1000);
 	
@@ -47,10 +64,20 @@ public final class ServerUtilities {
             try {
                 displayMessage(context, context.getString(
                         R.string.server_registering, i, MAX_ATTEMPTS));
-                post(serverUrl, params);
+                
+                //Post method will return true or false depending on whether the device was added successfully on the server
+                //If false, it is probably because the input account email/username is not an active account
+                deviceAdded = post(serverUrl, params);
+                if (deviceAdded) {
                 GCMRegistrar.setRegisteredOnServer(context, true);
                 String message = context.getString(R.string.server_registered);
                 CommonUtilities.displayMessage(context, message);
+                }
+                else {
+                	GCMRegistrar.setRegisteredOnServer(context, false);
+                	String message = context.getString(R.string.server_not_added);
+                	CommonUtilities.displayMessage(context, message);
+                }
                 return;
             } catch (IOException e) {
                 if (i == MAX_ATTEMPTS) {
@@ -91,15 +118,18 @@ public final class ServerUtilities {
     /**
      * Issue a POST request to the server.
      *
-     * @param endpoint POST address.
-     * @param params request parameters.
+     * @param endpoint: POST address.
+     * @param params: request parameters containing the new GCM ID, account name, and device name
      *
-     * @throws IOException propagated from POST.
+     * @throws: IOException propagated from POST.
+     * 
+     * @return: boolean indicating whether the device was successfully added to the server's database.
      */
-    private static void post(String endpoint, Map<String, String> params)
+    private static boolean post(String endpoint, Map<String, String> params)
             throws IOException {   	
         
         URL url;
+        boolean deviceAdded = false;
         try {
             url = new URL(endpoint);
         } catch (MalformedURLException e) {
@@ -131,6 +161,30 @@ public final class ServerUtilities {
             OutputStream out = conn.getOutputStream();
             out.write(bytes);
             out.close();
+            
+            /**
+             * Input reader from Monitordroid Server
+             * Servers response will either be "existsandcompleted" indicating the device was succesfully added to the database
+             * or "didnotcomplete", indicating that the device was not successfully added. 
+             * 
+             * If adding the device is not successful, it is probably due to the user entering a non-existent account into the "Account Email" field
+             */
+           
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String inputLine;
+            while ((inputLine = in.readLine()) != null) {
+            	Log.i("inputline: ", inputLine);
+            	if (inputLine.contains("existsandcompleted")) {
+            		Log.i("Monitordroid Server:", "Account Exists, device added");
+            		deviceAdded = true;
+            	}
+            	if (inputLine.contains("didnotcomplete")) {
+            		Log.i("Monitordroid Server:", "Account does not exist, device not added");
+            		deviceAdded = false;
+            	}
+            }
+            in.close();
+            
             // handle the response
             int status = conn.getResponseCode();
             if (status != 200) {
@@ -141,5 +195,6 @@ public final class ServerUtilities {
                 conn.disconnect();
             }
         }
+        return deviceAdded;
       }
 }
